@@ -12,6 +12,7 @@
 #import "MainScene.h"
 #import "CreditsScene.h"
 #import "HowToScene.h"
+#import "HighScoreScene.h"
 
 // -----------------------------------------------------------------------
 #pragma mark - IntroScene
@@ -42,6 +43,10 @@ CCLabelTTF *gamesGoldLabel;
     CCNodeColor *background = [CCNodeColor nodeWithColor:[CCColor colorWithRed:0.2f green:0.2f blue:0.2f alpha:1.0f]];
     [self addChild:background];
     
+    _leaderboardIdentifier = @"highscores";
+    _gameCenterEnabled = NO;
+    [self authenticateLocalPlayer];
+    
     // Brick Break label
     CCLabelTTF *label = [CCLabelTTF labelWithString:@"Brick Break" fontName:@"American Typewriter" fontSize:36.0f];
     label.positionType = CCPositionTypeNormalized;
@@ -52,7 +57,7 @@ CCLabelTTF *gamesGoldLabel;
     // play button
     CCButton *playButton = [CCButton buttonWithTitle:@"[ Play ]" fontName:@"Verdana-Bold" fontSize:20.0f];
     playButton.positionType = CCPositionTypeNormalized;
-    playButton.position = ccp(0.5f, 0.55f);
+    playButton.position = ccp(0.5f, 0.65f);
     [playButton setTarget:self selector:@selector(onSpinningClicked:)];
     [self addChild:playButton];
     
@@ -69,6 +74,13 @@ CCLabelTTF *gamesGoldLabel;
     howTo.position = ccp(0.8f, 0.1f);
     [howTo setTarget:self selector:@selector(howTo:)];
     [self addChild:howTo];
+    
+    // how to scene button
+    CCButton *highScores = [CCButton buttonWithTitle:@"[ High Scores ]" fontName:@"Verdana-Bold" fontSize:16.0f];
+    highScores.positionType = CCPositionTypeNormalized;
+    highScores.position = ccp(0.5f, 0.50f);
+    [highScores setTarget:self selector:@selector(highScores:)];
+    [self addChild:highScores];
     
     // get games played
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
@@ -100,6 +112,50 @@ CCLabelTTF *gamesGoldLabel;
 	return self;
 }
 
+-(void)authenticateLocalPlayer{
+    // Instantiate a GKLocalPlayer object to use for authenticating a player.
+    GKLocalPlayer *localPlayer = [GKLocalPlayer localPlayer];
+    
+    localPlayer.authenticateHandler = ^(UIViewController *viewController, NSError *error){
+        if (viewController != nil) {
+            // If it's needed display the login view controller.
+            [[[CCDirector sharedDirector] navigationController] presentViewController:viewController animated:true completion:nil];
+        }
+        else{
+            if ([GKLocalPlayer localPlayer].authenticated) {
+                // If the player is already authenticated then indicate that the Game Center features can be used.
+                _gameCenterEnabled = YES;
+                NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+                [defaults setValue:[NSString stringWithFormat:@"YES"] forKey:@"gc"];
+                [defaults synchronize];
+                
+                // Get the default leaderboard identifier.
+                [[GKLocalPlayer localPlayer] loadDefaultLeaderboardIdentifierWithCompletionHandler:^(NSString *leaderboardIdentifier, NSError *error) {
+                    
+                    if (error != nil) {
+                        NSLog(@"%@", [error localizedDescription]);
+                    }
+                    else{
+                        _leaderboardIdentifier = leaderboardIdentifier;
+                    }
+                }];
+            }
+            
+            else{
+                _gameCenterEnabled = NO;
+                NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+                [defaults setValue:[NSString stringWithFormat:@"NO"] forKey:@"gc"];
+                [defaults synchronize];
+            }
+        }
+    };
+}
+
+-(void)gameCenterViewControllerDidFinish:(GKGameCenterViewController *)gameCenterViewController
+{
+    [gameCenterViewController dismissViewControllerAnimated:YES completion:nil];
+}
+
 // -----------------------------------------------------------------------
 #pragma mark - Button Callbacks
 // -----------------------------------------------------------------------
@@ -118,6 +174,26 @@ CCLabelTTF *gamesGoldLabel;
 // send to how to scene
 - (void)howTo:(id)sender {
     [[CCDirector sharedDirector] replaceScene:[HowToScene scene]];
+}
+
+// send to proper highscore scene based on game center availablity
+- (void)highScores:(id)sender {
+    
+    if (_gameCenterEnabled) {
+        // Init the following view controller object.
+        GKGameCenterViewController *gcViewController = [[GKGameCenterViewController alloc] init];
+        
+        // Set self as its delegate.
+        gcViewController.gameCenterDelegate = self;
+        
+        gcViewController.viewState = GKGameCenterViewControllerStateLeaderboards;
+        //gcViewController.leaderboardIdentifier = _leaderboardIdentifier;
+        
+        // Finally present the view controller.
+        [[[CCDirector sharedDirector] navigationController] presentViewController:gcViewController animated:true completion:nil];
+    } else {
+        [[CCDirector sharedDirector] replaceScene:[HighScoreScene scene]];
+    }
 }
 
 // -----------------------------------------------------------------------

@@ -25,6 +25,8 @@
 		2EC0702419940F120058B59A /* boundary1.png in Resources */ = {isa = PBXBuildFile; fileRef = 2EC0702319940F120058B59A /* boundary1.png */; };
 		2EC0702919941A590058B59A /* break.wav in Resources */ = {isa = PBXBuildFile; fileRef = 2EC0702819941A590058B59A /* break.wav */; };
 		2EC0702B19941CE30058B59A /* arrow.png in Resources */ = {isa = PBXBuildFile; fileRef = 2EC0702A19941CE30058B59A /* arrow.png */; };
+		2EC8CB4719CA0A1700D50B9A /* HighScoreScene.m in Sources */ = {isa = PBXBuildFile; fileRef = 2EC8CB4619CA0A1700D50B9A /* HighScoreScene.m */; };
+		2EC8CB4B19CA154000D50B9A /* GameKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2EC8CB4A19CA154000D50B9A /* GameKit.framework */; };
 		2ED3258019A524CF00D96638 /* pause.png in Resources */ = {isa = PBXBuildFile; fileRef = 2ED3257F19A524CF00D96638 /* pause.png */; };
 		2ED3258219A6B41700D96638 /* heart.png in Resources */ = {isa = PBXBuildFile; fileRef = 2ED3258119A6B41700D96638 /* heart.png */; };
 		2ED3258B19A6BC6200D96638 /* IntroScene.m in Sources */ = {isa = PBXBuildFile; fileRef = 2ED3258A19A6BC6200D96638 /* IntroScene.m */; };
@@ -99,6 +101,9 @@
 		2EC0702319940F120058B59A /* boundary1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = boundary1.png; sourceTree = "<group>"; };
 		2EC0702819941A590058B59A /* break.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = break.wav; sourceTree = "<group>"; };
 		2EC0702A19941CE30058B59A /* arrow.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = arrow.png; sourceTree = "<group>"; };
+		2EC8CB4519CA0A1700D50B9A /* HighScoreScene.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HighScoreScene.h; sourceTree = "<group>"; };
+		2EC8CB4619CA0A1700D50B9A /* HighScoreScene.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = HighScoreScene.m; sourceTree = "<group>"; };
+		2EC8CB4A19CA154000D50B9A /* GameKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GameKit.framework; path = System/Library/Frameworks/GameKit.framework; sourceTree = SDKROOT; };
 		2ED3257F19A524CF00D96638 /* pause.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = pause.png; sourceTree = "<group>"; };
 		2ED3258119A6B41700D96638 /* heart.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = heart.png; sourceTree = "<group>"; };
 		2ED3258919A6BC6200D96638 /* IntroScene.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IntroScene.h; sourceTree = "<group>"; };
@@ -146,6 +151,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2EC8CB4B19CA154000D50B9A /* GameKit.framework in Frameworks */,
 				8392007A18EE8E3300B6C429 /* GLKit.framework in Frameworks */,
 				B737898A1807642B0076A88C /* libcocos2d.a in Frameworks */,
 				B77F1B3217B978D7009739AE /* QuartzCore.framework in Frameworks */,
@@ -199,6 +205,8 @@
 				B737893E1807617C0076A88C /* AppDelegate.m */,
 				2ED3258919A6BC6200D96638 /* IntroScene.h */,
 				2ED3258A19A6BC6200D96638 /* IntroScene.m */,
+				2EC8CB4519CA0A1700D50B9A /* HighScoreScene.h */,
+				2EC8CB4619CA0A1700D50B9A /* HighScoreScene.m */,
 				B7378992180767190076A88C /* MainScene.h */,
 				B7378993180767190076A88C /* MainScene.m */,
 				2EBE7E1C19AF98EA00CDB447 /* CreditsScene.h */,
@@ -276,6 +284,7 @@
 		B77F1B3017B978D7009739AE /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				2EC8CB4A19CA154000D50B9A /* GameKit.framework */,
 				8392007918EE8E3300B6C429 /* GLKit.framework */,
 				B7B3713D180358F1007369CC /* libObjectiveChipmunk.a */,
 				B77F1B3117B978D7009739AE /* QuartzCore.framework */,
@@ -338,10 +347,11 @@
 		B77F1B2617B978D7009739AE /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0510;
+				LastUpgradeCheck = 0600;
 				ORGANIZATIONNAME = Apportable;
 				TargetAttributes = {
 					B77F1B2D17B978D7009739AE = {
+						DevelopmentTeam = G3MVX5T5N6;
 						SystemCapabilities = {
 							com.apple.GameCenter = {
 								enabled = 0;
@@ -451,6 +461,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B737893F1807617C0076A88C /* AppDelegate.m in Sources */,
+				2EC8CB4719CA0A1700D50B9A /* HighScoreScene.m in Sources */,
 				2ED3258B19A6BC6200D96638 /* IntroScene.m in Sources */,
 				2EBE7E2219AF9C3400CDB447 /* HowToScene.m in Sources */,
 				2EBE7E1E19AF98EA00CDB447 /* CreditsScene.m in Sources */,
@@ -478,8 +489,10 @@
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -509,8 +522,10 @@
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					NDEBUG,
@@ -557,7 +572,7 @@
 					"-ObjC",
 				);
 				PRODUCT_NAME = BrickBreak;
-				PROVISIONING_PROFILE = "";
+				PROVISIONING_PROFILE = "2e15fef4-9b79-45bf-a827-648416d13d57";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
@@ -588,7 +603,7 @@
 					"-ObjC",
 				);
 				PRODUCT_NAME = BrickBreak;
-				PROVISIONING_PROFILE = "";
+				PROVISIONING_PROFILE = "2e15fef4-9b79-45bf-a827-648416d13d57";
 				VALIDATE_PRODUCT = YES;
 				WRAPPER_EXTENSION = app;
 			};

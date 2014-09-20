@@ -48,6 +48,8 @@ CCSprite *heart5;
 CCLabelTTF *playAgain;
 CCButton *noButton;
 CCButton *yesButton;
+CCButton *shareButton;
+CCButton *quitButton;
 int highScore;
 bool gameIsOver;
 float posVal;
@@ -56,6 +58,13 @@ float multiplier;
 CCLabelTTF *streakLabel;
 CCLabelTTF *multiplierLabel;
 int gamesPlayed;
+NSMutableArray *localScores;
+NSMutableArray *localScoreVals;
+NSString *shareString;
+NSArray *activityItems;
+NSArray *excludedActivityTypes;
+NSArray *applicationActivities;
+UIActivityViewController *activityViewController;
 
 + (MainScene *)scene
 {
@@ -71,6 +80,8 @@ int gamesPlayed;
     
     // Enable touch handling on scene node
     self.userInteractionEnabled = YES;
+    
+    // defaults
     score = 0;
     misses = 0;
     first = true;
@@ -78,6 +89,14 @@ int gamesPlayed;
     posVal = 250.0f;
     streak = 0;
     multiplier = 1.0f;
+    _leaderboardIdentifier = @"highscores";
+    
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    if ([[defaults valueForKey:@"gc"] isEqualToString:@"YES"]) {
+        _gameCenterEnabled = YES;
+    } else {
+        _gameCenterEnabled = NO;
+    }
     
     // get screen size
     CGSize s = [[CCDirector sharedDirector] viewSize];
@@ -105,9 +124,23 @@ int gamesPlayed;
     [self addHearts];
     
     // retrieve high score and games played
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     highScore = [[defaults valueForKey:@"HighScore"] intValue];
     gamesPlayed = [[defaults valueForKey:@"games"] intValue];
+    
+    // check for local highs scores
+    if (![defaults objectForKey:@"hsArray"]) {
+         localScores = [[NSMutableArray alloc] init];
+    } else {
+        localScores = [[NSMutableArray alloc] initWithArray:[defaults objectForKey:@"hsArray"]];
+        NSLog(@"%@", localScores);
+    }
+    
+    if (![defaults objectForKey:@"hsValsArray"]) {
+        localScoreVals = [[NSMutableArray alloc] init];
+    } else {
+        localScoreVals = [[NSMutableArray alloc] initWithArray:[defaults objectForKey:@"hsValsArray"]];
+        NSLog(@"%@", localScoreVals);
+    }
     
     // add player sprites and check for gold cannon
     if (gamesPlayed >= 20) {
@@ -167,6 +200,11 @@ int gamesPlayed;
     [pauseBtn setTarget:self selector:@selector(pause)];
     [_physicsWorld addChild:pauseBtn];
     
+    // quit button
+    quitButton = [CCButton buttonWithTitle:@"[ Quit ]" fontName:@"Verdana-Bold" fontSize:16.0f];
+    quitButton.position = ccp(width/2, height/2-35.0f);
+    [quitButton setTarget:self selector:@selector(quit:)];
+    
     // add high score label
     highScoreLabel = [CCLabelTTF labelWithString:[NSString stringWithFormat:@"High Score: %i", highScore] fontName:@"American Typewriter" fontSize:20.0f];
     highScoreLabel.color = [CCColor whiteColor];
@@ -202,10 +240,6 @@ int gamesPlayed;
 
 // pause and resume game
 -(void)pause {
-    // quit button
-    CCButton *quitButton = [CCButton buttonWithTitle:@"[ Quit ]" fontName:@"Verdana-Bold" fontSize:16.0f];
-    quitButton.position = ccp(width/2, height/2-35.0f);
-    [quitButton setTarget:self selector:@selector(quit:)];
     
     if (isPaused) {
         [[CCDirector sharedDirector] resume];
@@ -247,6 +281,19 @@ int gamesPlayed;
     }
     
     
+}
+
+-(void)reportScore{
+    
+    // Create a GKScore object to assign the score and report it as a NSArray object.
+    GKScore *myScore = [[GKScore alloc] initWithLeaderboardIdentifier:_leaderboardIdentifier];
+    myScore.value = [[NSString stringWithFormat:@"%i", score] intValue];
+    
+    [GKScore reportScores:@[myScore] withCompletionHandler:^(NSError *error) {
+        if (error != nil) {
+            NSLog(@"%@", [error localizedDescription]);
+        }
+    }];
 }
 
 // handle screen tap
@@ -503,11 +550,33 @@ int gamesPlayed;
             break;
         case 5:
             [heart1 removeFromParent];
+            
+            if (_gameCenterEnabled) {
+                // report score to game center
+                [self reportScore];
+            } else {
+                // add local score
+                if (localScores.count < 5 && score > 0) {
+                    UIAlertView *alertV = [[UIAlertView alloc] initWithTitle:@"New Highscore!" message:@"Enter your name:" delegate:self cancelButtonTitle:nil otherButtonTitles:@"Ok", nil];
+                    alertV.alertViewStyle = UIAlertViewStylePlainTextInput;
+                    [alertV show];
+                } else {
+                    for (int i=0; i < localScoreVals.count; i++) {
+                        if (score > [[localScoreVals objectAtIndex:i] intValue]) {
+                            UIAlertView *alertV = [[UIAlertView alloc] initWithTitle:@"New Highscore!" message:@"Enter your name:" delegate:self cancelButtonTitle:nil otherButtonTitles:@"Ok", nil];
+                            alertV.alertViewStyle = UIAlertViewStylePlainTextInput;
+                            [alertV show];
+                            break;
+                        }
+                    }
+                }
+            }
+            
             // pause game and display Game Over message
             [[CCDirector sharedDirector] pause];
             gameOver = [CCLabelTTF labelWithString:@"Game Over" fontName:@"American Typewriter" fontSize:24.0f];
             gameOver.color = [CCColor whiteColor];
-            gameOver.position = ccp(width/2, height/2 + 20);
+            gameOver.position = ccp(width/2, height/2 + 40);
             [_physicsWorld addChild:gameOver];
             gameIsOver = true;
             [self playAgain];
@@ -517,27 +586,70 @@ int gamesPlayed;
     }
 }
 
+- (BOOL)alertViewShouldEnableFirstOtherButton:(UIAlertView *)alertView
+{
+    return [[alertView textFieldAtIndex:0].text length] > 0 && [[alertView textFieldAtIndex:0].text length] < 10;
+}
+
+// save player name and high score
+-(void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
+{
+    UITextField *nameTextField = [alertView textFieldAtIndex:0];
+    int randomNumber = arc4random() % 2000 + 4000;
+    [localScores addObject:[NSString stringWithFormat:@"%@: %i", nameTextField.text, score]];
+    [localScoreVals addObject:[NSString stringWithFormat:@"%iab%i", score, randomNumber]];
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    
+    // sort arrays
+    NSDictionary *dictionary = [NSDictionary dictionaryWithObjects:localScores forKeys:localScoreVals];
+    NSSortDescriptor* sortDescript = [NSSortDescriptor sortDescriptorWithKey:nil ascending:NO selector:@selector(localizedCompare:)];
+    NSArray *sortedLocalScores = [[dictionary allKeys] sortedArrayUsingDescriptors:[NSArray arrayWithObject:sortDescript]];
+    NSArray *sortedLocalScoreVals = [dictionary objectsForKeys:sortedLocalScores notFoundMarker:[NSNull null]];
+    
+    // store sorted values
+    localScores = nil;
+    localScoreVals = nil;
+    localScoreVals = [[NSMutableArray alloc] initWithArray:sortedLocalScores];
+    localScores = [[NSMutableArray alloc] initWithArray:sortedLocalScoreVals];
+    
+    if (localScores.count == 6) {
+        [localScores removeLastObject];
+        [localScoreVals removeLastObject];
+    }
+    
+    [defaults setObject:localScores forKey:@"hsArray"];
+    [defaults setObject:localScoreVals forKey:@"hsValsArray"];
+    [defaults synchronize];
+}
+
 // ask the user the play again
 - (void)playAgain {
     // update games played
     gamesPlayed++;
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     [defaults setValue:[NSString stringWithFormat:@"%i", gamesPlayed] forKey:@"games"];
+    [defaults synchronize];
     
     playAgain = [CCLabelTTF labelWithString:@"Play Again?" fontName:@"American Typewriter" fontSize:18.0f];
     playAgain.color = [CCColor whiteColor];
-    playAgain.position = ccp(width/2, height/2 - 10.0f);
+    playAgain.position = ccp(width/2, height/2 + 10.0f);
     [_physicsWorld addChild:playAgain];
     
     yesButton = [CCButton buttonWithTitle:@"Yes" fontName:@"American Typewriter" fontSize:16.0f];
-    yesButton.position = ccp(width/2 - 25.0f, height/2 - 40.0f);
+    yesButton.position = ccp(width/2 - 25.0f, height/2 - 15.0f);
     [yesButton setTarget:self selector:@selector(yesBtn:)];
     [_physicsWorld addChild:yesButton];
     
     noButton = [CCButton buttonWithTitle:@"No" fontName:@"American Typewriter" fontSize:16.0f];
-    noButton.position = ccp(width/2 + 25.0f, height/2 - 40.0f);
+    noButton.position = ccp(width/2 + 25.0f, height/2 - 15.0f);
     [noButton setTarget:self selector:@selector(noBtn:)];
     [_physicsWorld addChild:noButton];
+    
+    shareButton = [CCButton buttonWithTitle:@"[ Share ]" fontName:@"Verdana-Bold" fontSize:16.0f];
+    shareButton.position = ccp(width/2, height/2 - 40.0f);
+    [shareButton setTarget:self selector:@selector(share:)];
+    [_physicsWorld addChild:shareButton];
+    
 }
 
 // restart game
@@ -551,6 +663,21 @@ int gamesPlayed;
     [[CCDirector sharedDirector] resume];
     [[CCDirector sharedDirector] replaceScene:[IntroScene scene]
                                withTransition:[CCTransition transitionPushWithDirection:CCTransitionDirectionRight duration:1.0f]];
+}
+
+// display share (activity) view
+- (void)share:(id)sender {
+    // prepare share info
+    shareString = [NSString stringWithFormat:@"I just scored %i points in Brick Break. Top that! #BrickBreakiOS", score];
+    activityItems = @[shareString];
+    excludedActivityTypes = @[UIActivityTypePrint, UIActivityTypeAssignToContact, UIActivityTypeAirDrop];
+    applicationActivities = @[];
+    activityViewController = [[UIActivityViewController alloc] initWithActivityItems:activityItems
+                                                               applicationActivities:applicationActivities];
+    activityViewController.excludedActivityTypes = excludedActivityTypes;
+    
+    // show share view
+    [[[CCDirector sharedDirector] navigationController] presentViewController:activityViewController animated:YES completion:nil];
 }
 
 @end
