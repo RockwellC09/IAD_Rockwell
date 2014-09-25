@@ -65,6 +65,9 @@ NSArray *activityItems;
 NSArray *excludedActivityTypes;
 NSArray *applicationActivities;
 UIActivityViewController *activityViewController;
+bool noHit;
+int noHitNum;
+int fiveStreakCount;
 
 + (MainScene *)scene
 {
@@ -90,6 +93,7 @@ UIActivityViewController *activityViewController;
     streak = 0;
     multiplier = 1.0f;
     _leaderboardIdentifier = @"highscores";
+    noHit = false;
     
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     if ([[defaults valueForKey:@"gc"] isEqualToString:@"YES"]) {
@@ -97,6 +101,23 @@ UIActivityViewController *activityViewController;
     } else {
         _gameCenterEnabled = NO;
     }
+    
+    
+    // set up values for no hit games
+    if (![defaults valueForKey:@"noHit"]) {
+        [defaults setValue:0 forKey:@"noHit"];
+        [defaults synchronize];
+    }
+    noHitNum = [[defaults valueForKey:@"noHit"] intValue];
+    
+    
+    // set up values for 5 point streaks
+    if (![defaults valueForKey:@"5streak"]) {
+        [defaults setValue:0 forKey:@"5streak"];
+        [defaults synchronize];
+    }
+    fiveStreakCount = [[defaults valueForKey:@"5streak"] intValue];
+    NSLog(@"%i", fiveStreakCount);
     
     // get screen size
     CGSize s = [[CCDirector sharedDirector] viewSize];
@@ -132,14 +153,12 @@ UIActivityViewController *activityViewController;
          localScores = [[NSMutableArray alloc] init];
     } else {
         localScores = [[NSMutableArray alloc] initWithArray:[defaults objectForKey:@"hsArray"]];
-        NSLog(@"%@", localScores);
     }
     
     if (![defaults objectForKey:@"hsValsArray"]) {
         localScoreVals = [[NSMutableArray alloc] init];
     } else {
         localScoreVals = [[NSMutableArray alloc] initWithArray:[defaults objectForKey:@"hsValsArray"]];
-        NSLog(@"%@", localScoreVals);
     }
     
     // add player sprites and check for gold cannon
@@ -356,6 +375,51 @@ UIActivityViewController *activityViewController;
     collided = true;
     [self updateScore];
     [_ball removeFromParent];
+    
+    // check streak for achievement
+    if (streak >= 5) {
+        // 5 point streak achievement
+        NSString *_identifier = @"5PointStreak";
+        GKAchievement *achievement =
+        [[GKAchievement alloc] initWithIdentifier: _identifier];
+        achievement.showsCompletionBanner = YES;
+        if (achievement)
+        {
+            achievement.percentComplete = 100.0f;
+            [achievement reportAchievementWithCompletionHandler:^(NSError *error)
+             {
+                 if (error != nil)
+                 {
+                     NSLog(@"%@", error);
+                 }
+             }];
+        }
+    }
+    
+    if (streak == 5) {
+        fiveStreakCount++;
+        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+        [defaults setValue:[NSString stringWithFormat:@"%i", fiveStreakCount] forKey:@"5streak"];
+        [defaults synchronize];
+        // 5 point streak times 2 achievement
+        if (fiveStreakCount >= 2) {
+            NSString *_identifier = @"5PointStreak2";
+            GKAchievement *achievement =
+            [[GKAchievement alloc] initWithIdentifier: _identifier];
+            achievement.showsCompletionBanner = YES;
+            if (achievement)
+            {
+                achievement.percentComplete = 100.0f;
+                [achievement reportAchievementWithCompletionHandler:^(NSError *error)
+                 {
+                     if (error != nil)
+                     {
+                         NSLog(@"%@", error);
+                     }
+                 }];
+            }
+        }
+    }
     
     // access audio object
     OALSimpleAudio *audioObj = [OALSimpleAudio sharedInstance];
@@ -626,6 +690,10 @@ UIActivityViewController *activityViewController;
 - (void)playAgain {
     // update games played
     gamesPlayed++;
+    if (score == 0) {
+        noHit = true;
+    }
+    [self cheackAchievements];
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     [defaults setValue:[NSString stringWithFormat:@"%i", gamesPlayed] forKey:@"games"];
     [defaults synchronize];
@@ -650,6 +718,52 @@ UIActivityViewController *activityViewController;
     [shareButton setTarget:self selector:@selector(share:)];
     [_physicsWorld addChild:shareButton];
     
+}
+
+- (void)cheackAchievements {
+    // 5 games played achievement
+    if (gamesPlayed >= 5) {
+        NSString *_identifier = @"5games";
+        GKAchievement *achievement =
+        [[GKAchievement alloc] initWithIdentifier: _identifier];
+        achievement.showsCompletionBanner = YES;
+        if (achievement)
+        {
+            achievement.percentComplete = 100.0f;
+            [achievement reportAchievementWithCompletionHandler:^(NSError *error)
+             {
+                 if (error != nil)
+                 {
+                     NSLog(@"%@", error);
+                 }
+             }];
+        }
+    }
+    
+    // snake eyes achievement
+    if (noHit) {
+        noHitNum++;
+        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+        [defaults setValue:[NSString stringWithFormat:@"%i", noHitNum] forKey:@"noHit"];
+        [defaults synchronize];
+        if (noHitNum >= 2) {
+            NSString *_identifier = @"snakeEyes";
+            GKAchievement *achievement =
+            [[GKAchievement alloc] initWithIdentifier: _identifier];
+            achievement.showsCompletionBanner = YES;
+            if (achievement)
+            {
+                achievement.percentComplete = 100.0f;
+                [achievement reportAchievementWithCompletionHandler:^(NSError *error)
+                 {
+                     if (error != nil)
+                     {
+                         NSLog(@"%@", error);
+                     }
+                 }];
+            }
+        }
+    }
 }
 
 // restart game

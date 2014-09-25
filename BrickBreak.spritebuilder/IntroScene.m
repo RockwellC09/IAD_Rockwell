@@ -78,9 +78,16 @@ CCLabelTTF *gamesGoldLabel;
     // how to scene button
     CCButton *highScores = [CCButton buttonWithTitle:@"[ High Scores ]" fontName:@"Verdana-Bold" fontSize:16.0f];
     highScores.positionType = CCPositionTypeNormalized;
-    highScores.position = ccp(0.5f, 0.50f);
+    highScores.position = ccp(0.35f, 0.50f);
     [highScores setTarget:self selector:@selector(highScores:)];
     [self addChild:highScores];
+    
+    // how to scene button
+    CCButton *achievements = [CCButton buttonWithTitle:@"[ Achievements ]" fontName:@"Verdana-Bold" fontSize:16.0f];
+    achievements.positionType = CCPositionTypeNormalized;
+    achievements.position = ccp(0.65f, 0.50f);
+    [achievements setTarget:self selector:@selector(achievements:)];
+    [self addChild:achievements];
     
     // get games played
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
@@ -179,7 +186,7 @@ CCLabelTTF *gamesGoldLabel;
 // send to proper highscore scene based on game center availablity
 - (void)highScores:(id)sender {
     
-    if (_gameCenterEnabled) {
+    if ([GKLocalPlayer localPlayer].authenticated) {
         // Init the following view controller object.
         GKGameCenterViewController *gcViewController = [[GKGameCenterViewController alloc] init];
         
@@ -187,6 +194,25 @@ CCLabelTTF *gamesGoldLabel;
         gcViewController.gameCenterDelegate = self;
         
         gcViewController.viewState = GKGameCenterViewControllerStateLeaderboards;
+        //gcViewController.leaderboardIdentifier = _leaderboardIdentifier;
+        
+        // Finally present the view controller.
+        [[[CCDirector sharedDirector] navigationController] presentViewController:gcViewController animated:true completion:nil];
+    } else {
+        [[CCDirector sharedDirector] replaceScene:[HighScoreScene scene]];
+    }
+}
+
+- (void)achievements:(id)sender {
+    
+    if ([GKLocalPlayer localPlayer].authenticated) {
+        // Init the following view controller object.
+        GKGameCenterViewController *gcViewController = [[GKGameCenterViewController alloc] init];
+        
+        // Set self as its delegate.
+        gcViewController.gameCenterDelegate = self;
+        
+        gcViewController.viewState = GKGameCenterViewControllerStateAchievements;
         //gcViewController.leaderboardIdentifier = _leaderboardIdentifier;
         
         // Finally present the view controller.
